@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using GameOverlay.Windows;
 using GameOverlay.Drawing;
+using ProcessMemoryUtilities.Managed;
 
 namespace FF8Clock
 {
@@ -18,10 +19,12 @@ namespace FF8Clock
         private SolidBrush blackBrush;
         private Font font;
         private Process process;
+        private IntPtr address;
 
         public MainWindow()
         {
             InitializeComponent();
+            Visible = false;
         }
 
         private void Window_DestroyGraphics(object sender, DestroyGraphicsEventArgs e)
@@ -33,11 +36,18 @@ namespace FF8Clock
 
         private void Window_DrawGraphics(object sender, DrawGraphicsEventArgs e)
         {
-            if (process == null || process.HasExited) Environment.Exit(0);
+            if (process == null || process.HasExited)
+            {
+                Environment.Exit(0);
+                return;
+            }
+
+            uint time = 0;
+            NativeWrapper.ReadProcessMemory(process.Handle, address, ref time);
 
             var gfx = e.Graphics;
             gfx.ClearScene();
-            gfx.DrawTextWithBackground(font, whiteBrush, blackBrush, gfx.Width / 2 - 28, 32, DateTime.Now.ToLongTimeString());
+            gfx.DrawTextWithBackground(font, whiteBrush, blackBrush, gfx.Width / 2 - 28, 32, TimeSpan.FromSeconds(time).ToString());
         }
 
         private void Window_SetupGraphics(object sender, SetupGraphicsEventArgs e)
@@ -68,6 +78,8 @@ namespace FF8Clock
                 Application.Exit();
                 return;
             }
+
+            address = process.MainModule.BaseAddress + 0x18FE928;
 
             var gfx = new Graphics()
             {
