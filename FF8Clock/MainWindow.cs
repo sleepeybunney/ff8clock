@@ -70,7 +70,14 @@ namespace FF8Clock
 
         private void MainWindow_Load(object sender, EventArgs e)
         {
+            var offset = 0x18FE928;
             process = Process.GetProcessesByName("FF8_EN").FirstOrDefault();
+
+            if (process == null)
+            {
+                offset = 0x18FE600;
+                process = Process.GetProcessesByName("FF8_FR").FirstOrDefault();
+            }
 
             if (process == null)
             {
@@ -79,7 +86,7 @@ namespace FF8Clock
                 return;
             }
 
-            address = process.MainModule.BaseAddress + 0x18FE928;
+            address = process.MainModule.BaseAddress + offset;
 
             var gfx = new Graphics()
             {
